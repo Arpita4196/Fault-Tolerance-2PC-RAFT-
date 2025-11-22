@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  service-node1:
+    build:
+      context: .
+      dockerfile: Dockerfile.2pc
+    container_name: service-node1
+    environment:
+      NODE_ID: "service-node1"
+      COORDINATOR: "true"
+    networks:
+      - two-pc
+
+  service-node2:
+    build:
+      context: .
+      dockerfile: Dockerfile.2pc
+    container_name: service-node2
+    environment:
+      NODE_ID: "service-node2"
+    networks:
+      - two-pc
+
+  service-node3:
+    build:
+      context: .
+      dockerfile: Dockerfile.2pc
+    container_name: service-node3
+    environment:
+      NODE_ID: "service-node3"
+    networks:
+      - two-pc
+
+  service-node4:
+    build:
+      context: .
+      dockerfile: Dockerfile.2pc
+    container_name: service-node4
+    environment:
+      NODE_ID: "service-node4"
+      ABORT_SELF: "false"
+    networks:
+      - two-pc
+
+  service-node5:
+    build:
+      context: .
+      dockerfile: Dockerfile.2pc
+    container_name: service-node5
+    environment:
+      NODE_ID: "service-node5"
+    networks:
+      - two-pc
+
+networks:
+  two-pc:
+    driver: bridge

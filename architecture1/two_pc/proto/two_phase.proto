@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package two_phase;
+
+// ---------------------------
+// Messages
+// ---------------------------
+
+// Transaction passed through all RPCs
+message Transaction {
+  string id = 1;
+  string payload = 2;
+}
+
+// ---------------------------
+// VOTE PHASE
+// ---------------------------
+
+// coordinator → vote phase
+message VoteRequestMsg {
+  Transaction txn = 1;
+  string from_node = 2;
+  string from_phase = 3;
+}
+
+// vote phase → coordinator
+message VoteResponse {
+  bool vote_commit = 1;
+  string reason = 2;
+}
+
+// ---------------------------
+// DECISION PHASE
+// ---------------------------
+
+// vote → decision (same node)
+message PrepareRequestMsg {
+  Transaction txn = 1;
+  string from_node = 2;
+  string from_phase = 3;
+}
+
+// coordinator → decision
+message DecisionRequestMsg {
+  Transaction txn = 1;
+  string from_node = 2;
+  string from_phase = 3;
+}
+
+message Ack {
+  bool ok = 1;
+  string info = 2;
+}
+
+// ---------------------------
+// Services
+// ---------------------------
+
+service VoteService {
+  rpc VoteRequest (VoteRequestMsg) returns (VoteResponse);
+}
+
+service DecisionService {
+  rpc Prepare (PrepareRequestMsg) returns (Ack);
+  rpc GlobalCommit (DecisionRequestMsg) returns (Ack);
+  rpc GlobalAbort (DecisionRequestMsg) returns (Ack);
+}

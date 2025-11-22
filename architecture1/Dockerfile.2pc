@@ -1,0 +1,23 @@
+FROM python:3.10
+
+WORKDIR /app
+
+COPY . /app
+
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r two_pc/requirements.txt
+
+RUN python -m grpc_tools.protoc \
+    -I=two_pc/proto \
+    --python_out=two_pc \
+    --grpc_python_out=two_pc \
+    two_pc/proto/two_phase.proto
+
+ENV NODE_ID="service-node1"
+ENV COORDINATOR="false"
+ENV VOTE_PORT=50052
+ENV DECISION_PORT=50053
+
+EXPOSE 50052 50053
+
+CMD sh -c "python alerter.py & cd two_pc && python run_node.py"
