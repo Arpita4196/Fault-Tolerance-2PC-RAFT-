@@ -28,10 +28,11 @@ Result: Globbal Commit
 
 #to force an abort, set one node (e.g., service-node3) to vote NO:
 - edit docker-compose.2pc.yml
-service-node3:
-  environment:
-    NODE_ID: "service-node3"
-    ABORT_SELF: "true"    <--- to  vote abort
+ 
+-service-node3:
+-  environment:
+-    NODE_ID: "service-node3"
+-    ABORT_SELF: "true"    <--- to  vote abort
 
 ```bash
 docker compose -f docker-compose.2pc.yml up --build
