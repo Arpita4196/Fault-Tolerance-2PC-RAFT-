@@ -21,6 +21,7 @@ From inside `architecture1/` run:  #please go inside the folder name 'architectu
 git clone https://github.com/Arpita4196/Fault-Tolerance-2PC-RAFT-.git
 cd Fault-Tolerance-2PC-RAFT-/architecture1  #please go inside the folder name 'architecture1'
 docker compose -f docker-compose.2pc.yml up --build
+```
 
 Result: Globbal Commit
 
@@ -34,6 +35,7 @@ service-node3:
 
 ```bash
 docker compose -f docker-compose.2pc.yml up --build
+```
 
 Result: Global Abort
 
