@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+// Package name for Raft messages.  When compiling to Go, the go_package option
+// directs protoc to generate the code under the raftpb package.  Feel free
+// to change the module path to your own repository path.
+package raft;
+
+option go_package = "github.com/Abdullah007noman/My-Distributed-System/raftpb";
+
+// A single entry in the replicated log.  The command is stored as raw
+// bytes; in this project we will store a serialized SensorReading here.
+message LogEntry {
+  uint64 index = 1;       // position of the entry in the log (1‑based)
+  uint64 term  = 2;       // term when the entry was received by leader
+  bytes  command = 3;     // opaque command (e.g. serialized SensorReading)
+}
+
+// Request sent by candidates to gather votes during an election.
+message RequestVoteRequest {
+  uint64 term = 1;           // candidate’s term
+  string candidate_id = 2;   // candidate requesting vote
+  uint64 last_log_index = 3; // index of candidate’s last log entry
+  uint64 last_log_term  = 4; // term of candidate’s last log entry
+}
+
+// Reply to a RequestVote RPC.  VoteGranted indicates if the receiver
+// voted for the candidate.  The term field allows candidates to
+// discover if they are outdated.
+message RequestVoteReply {
+  uint64 term = 1;      // current term of the voter
+  bool   vote_granted = 2;
+}
+
+// AppendEntries RPC is used for two purposes: to send heartbeats and to
+// replicate log entries.  prevLogIndex and prevLogTerm describe the
+// log entry immediately preceding the new ones.  leaderCommit tells
+// followers the highest log entry known to be committed.
+message AppendEntriesRequest {
+  uint64 term = 1;            // leader’s term
+  string leader_id = 2;       // leader’s ID
+  uint64 prev_log_index = 3;  // index of log entry immediately preceding new entries
+  uint64 prev_log_term  = 4;  // term of prev_log_index entry
+  repeated LogEntry entries = 5; // new entries to store (empty for heartbeat)
+  uint64 leader_commit = 6;   // leader’s commit index
+}
+
+// Reply to AppendEntries RPC.  success indicates whether the follower
+// replicated the entries.  matchIndex is the index of the highest
+// entry the follower matches.  term is the follower's current term.
+message AppendEntriesReply {
+  uint64 term = 1;
+  bool   success = 2;
+  uint64 match_index = 3;
+}
+
+// GetLeaderRequest is used by clients/followers to query the current leader.
+message GetLeaderRequest {
+  // Empty for now, can be extended later
+}
+
+// GetLeaderReply returns the current leader's ID and term.
+message GetLeaderReply {
+  string leader_id = 1;  // Empty if no leader known
+  uint64 term = 2;
+}
+
+// Raft service defines the consensus RPCs.  Each node will expose
+// these RPCs to peers.  Both methods are unary in this simplified
+// implementation.
+service Raft {
+  rpc RequestVote(RequestVoteRequest) returns (RequestVoteReply);
+  rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesReply);
+  rpc GetLeader(GetLeaderRequest) returns (GetLeaderReply);
+}

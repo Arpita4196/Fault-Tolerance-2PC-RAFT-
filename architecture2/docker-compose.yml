@@ -1,0 +1,14 @@
+services:
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    ports:
+      - "50051:50051"
+
+  queryapi:
+    build:
+      context: .
+      dockerfile: services/query-api/Dockerfile
+    ports:
+      - "50052:50052"

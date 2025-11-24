@@ -1,0 +1,188 @@
+
+# -----------------------------------------------------------------------------
+#  Docker Compose file for Raft-enabled IoT Sensor Monitoring Cluster
+#
+#  This configuration launches five Raft nodes along with a dedicated Redis
+#  instance for each node.  The nodes use gRPC to communicate with each
+#  other for leader election and log replication.  To run the cluster, use:
+#
+#      docker compose -f docker-compose.raft.yml up -d --build
+#
+#  After the services are running you can connect to any node's ingest
+#  endpoint on its exposed port (6001–6005) to submit sensor readings.  The
+#  leader will replicate readings to the followers; followers will forward
+#  client requests to the leader.
+# -----------------------------------------------------------------------------
+
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "55432:5432"
+    restart: unless-stopped
+
+  redis1:
+    image: redis:7-alpine
+    ports:
+      - "6381:6379"
+    restart: unless-stopped
+
+  redis2:
+    image: redis:7-alpine
+    ports:
+      - "6382:6379"
+    restart: unless-stopped
+
+  redis3:
+    image: redis:7-alpine
+    ports:
+      - "6383:6379"
+    restart: unless-stopped
+
+  redis4:
+    image: redis:7-alpine
+    ports:
+      - "6384:6379"
+    restart: unless-stopped
+
+  redis5:
+    image: redis:7-alpine
+    ports:
+      - "6385:6379"
+    restart: unless-stopped
+
+  ingestion1:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: node1
+    environment:
+      - NODE_ID=node1
+      - NODE_PORT=50051
+      - PEERS=node2:50052,node3:50053,node4:50054,node5:50055
+      - REDIS_ADDR=redis1:6379
+    depends_on:
+      - redis1
+    ports:
+      - "50051:50051"
+    restart: unless-stopped
+
+  ingestion2:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: node2
+    environment:
+      - NODE_ID=node2
+      - NODE_PORT=50052
+      - PEERS=node1:50051,node3:50053,node4:50054,node5:50055
+      - REDIS_ADDR=redis2:6379
+    depends_on:
+      - redis2
+    ports:
+      - "50052:50052"
+    restart: unless-stopped
+
+  ingestion3:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: node3
+    environment:
+      - NODE_ID=node3
+      - NODE_PORT=50053
+      - PEERS=node1:50051,node2:50052,node4:50054,node5:50055
+      - REDIS_ADDR=redis3:6379
+    depends_on:
+      - redis3
+    ports:
+      - "50053:50053"
+    restart: unless-stopped
+
+  ingestion4:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: node4
+    environment:
+      - NODE_ID=node4
+      - NODE_PORT=50054
+      - PEERS=node1:50051,node2:50052,node3:50053,node5:50055
+      - REDIS_ADDR=redis4:6379
+    depends_on:
+      - redis4
+    ports:
+      - "50054:50054"
+    restart: unless-stopped
+
+  ingestion5:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: node5
+    environment:
+      - NODE_ID=node5
+      - NODE_PORT=50055
+      - PEERS=node1:50051,node2:50052,node3:50053,node4:50054
+      - REDIS_ADDR=redis5:6379
+    depends_on:
+      - redis5
+    ports:
+      - "50055:50055"
+    restart: unless-stopped
+
+  aggregator:
+    build:
+      context: .
+      dockerfile: services/aggregator/Dockerfile
+    environment:
+      - REDIS_ADDR=redis1:6379
+    depends_on:
+      - redis1
+    ports:
+      - "50060:50053"
+    restart: unless-stopped
+
+  alerter:
+    build:
+      context: .
+      dockerfile: services/alerter/Dockerfile
+    environment:
+      - REDIS_ADDR=redis1:6379
+    depends_on:
+      - redis1
+    ports:
+      - "50061:50054"
+    restart: unless-stopped
+
+  queryapi:
+    build:
+      context: .
+      dockerfile: services/query-api/Dockerfile
+    depends_on:
+      - timescaledb
+    ports:
+      - "50062:50052"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - timescaledb
+    ports:
+      - "3300:3000"
+    restart: unless-stopped
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  pg-data:
+  grafana-data:

@@ -1,0 +1,57 @@
+syntax = "proto3";
+package telemetry;
+
+// Set this to your module path + /proto
+option go_package = "github.com/Abdullah007noman/My-Distributed-System/proto";
+
+// ---- Original telemetry messages/services ----
+message SensorReading {
+  string sensor_id   = 1;
+  int64  ts_unix_ms  = 2;
+  string site        = 3;
+  double temperature = 4;
+  double humidity    = 5;
+  uint64 seq         = 6;
+}
+
+message IngestAck { uint64 last_seq = 1; }
+
+service Ingestion {
+  rpc StreamReadings(stream SensorReading) returns (IngestAck);
+}
+
+message QueryRequest { string sensor_id = 1; int64 start_ms = 2; int64 end_ms = 3; }
+message QueryPoint   { int64 ts_unix_ms = 1; double temperature = 2; double humidity = 3; }
+message QueryReply   { repeated QueryPoint points = 1; }
+
+service QueryAPI {
+  rpc Range(QueryRequest) returns (QueryReply);
+}
+
+// ---- New: Aggregator (server-stream metrics) ----
+message MetricsRequest { string sensor_id = 1; string site = 2; }
+message Metric {
+  string sensor_id    = 1;
+  string site         = 2;
+  int64  window_ms    = 3;
+  double avg_temp     = 4;
+  double avg_humidity = 5;
+  int64  ts_unix_ms   = 6;
+}
+service Aggregator {
+  rpc SubscribeMetrics(MetricsRequest) returns (stream Metric);
+}
+
+// ---- New: Alerter (server-stream alerts) ----
+message AlertRequest { string sensor_id = 1; string site = 2; }
+message Alert {
+  string sensor_id  = 1;
+  string site       = 2;
+  string reason     = 3;  // e.g., TEMP_HIGH
+  double value      = 4;
+  double threshold  = 5;
+  int64  ts_unix_ms = 6;
+}
+service Alerter {
+  rpc SubscribeAlerts(AlertRequest) returns (stream Alert);
+}
