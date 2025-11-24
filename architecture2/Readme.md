@@ -11,7 +11,7 @@ From inside `architecture2/` run:  #please go inside the folder name 'architectu
 ```bash
 git clone https://github.com/Arpita4196/Fault-Tolerance-2PC-RAFT-.git
 cd Fault-Tolerance-2PC-RAFT-/architecture2  #please go inside the folder name 'architecture2'
-docker compose -f docker-compose.2pc.yml up --build
+docker compose -f docker-compose.raft.yml up -d --build
 ```
 Run the below Test Cases:
 
